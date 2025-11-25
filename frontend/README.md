@@ -18,5 +18,8 @@ If you are developing a production application, we recommend using TypeScript wi
 
 
 toast, pagination, multiline comments, session, cashing   sql ma transaction kahty ha
+<<<<<<< HEAD
 frontend ma tanstack use keya 
 env or config file banai
+=======
+>>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994

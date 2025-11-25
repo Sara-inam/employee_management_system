@@ -11,7 +11,10 @@ class Config {
     this.EMAIL_USER = process.env.EMAIL_USER;
     this.EMAIL_PASS = process.env.EMAIL_PASS;
     this.FRONTEND_URL = process.env.FRONTEND_URL;
+<<<<<<< HEAD
     this.NODE_ENV = process.env.NODE_ENV;
+=======
+>>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
     // this.NODE_ENV = process.env.NODE_ENV ;
   }
 }
