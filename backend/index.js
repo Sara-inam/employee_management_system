@@ -6,12 +6,8 @@ import logger from "./src/config/logger.js";
 import app from './src/app.js';
 
 const server = express();   
-<<<<<<< HEAD
 
 server.use(cors({ origin: 'http://localhost:5173', credentials: true }));
-=======
-server.use(cors());
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
 server.use(express.json());
 
 

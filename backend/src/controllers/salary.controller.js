@@ -98,7 +98,6 @@ export const updateSalary = async (req, res) => {
 
 
 //get employee salaries by admin 
-<<<<<<< HEAD
 // export const getAllSalaries = async (req, res) => {
 //   try {
 //     let page = parseInt(req.query.page) || 1;
@@ -160,22 +159,6 @@ export const getAllSalaries = async (req, res) => {
     const totalCount = await Salary.countDocuments(); // total salaries
     const totalPages = Math.ceil(totalCount / limit);
 
-=======
-export const getAllSalaries = async (req, res) => {
-  try {
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit)|| 5;
-    const skip = (page-1) * limit;
-
-
-    const cacheKey = "allSalaries";
-    const cachedData = cache.get(cacheKey);
-    
-    if(cachedData){
-      logger.info("Returning all salaries from cache");
-      return res.status(200).json({salaries: cachedData});
-    }
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
     const salaries = await Salary.aggregate([
       {
         $lookup: {
@@ -196,7 +179,6 @@ export const getAllSalaries = async (req, res) => {
           year: 1,
         },
       },
-<<<<<<< HEAD
       { $sort: { year: -1, month: -1 } },
       { $skip: skip },
       { $limit: limit },
@@ -205,17 +187,6 @@ export const getAllSalaries = async (req, res) => {
     cache.set("allSalaries", salaries);
 
     res.status(200).json({ page, limit, totalPages, salaries });
-=======
-      { $sort: { year: -1, month: -1 } }, // latest first
-      { $skip: skip },
-      { $limit: limit },
-    ]);
-    cache.set(cacheKey, salaries);
-    logger.info("All salaries stored in cache");
-   
-    res.status(200).json({page, limit, salaries });
-
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
   } catch (error) {
     logger.error(error.message);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -226,11 +197,7 @@ export const getAllSalaries = async (req, res) => {
 export const getMySalary = async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
-<<<<<<< HEAD
     let limit = parseInt(req.query.limit) || 10;
-=======
-    let limit = parseInt(req.query.limit) || 5;
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
     const skip = (page - 1) * limit;
 
     const cacheKey = `mySalary_${req.user._id}`;

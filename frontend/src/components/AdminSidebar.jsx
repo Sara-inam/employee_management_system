@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Home, Users, DollarSign } from "lucide-react";
@@ -14,10 +10,7 @@ const AdminSidebar = () => {
     { name: "Admin Dashboard", path: "/admin-dashboard", Icon: <Home size={20} /> },
     { name: "Manage Employee", path: "/manage-employee", Icon: <Users size={20} /> },
     { name: "Manage Salary", path: "/manage-salary", Icon: <DollarSign size={20} /> },
-<<<<<<< HEAD
      { name: "Manage Department", path: "/manage-department", Icon: <DollarSign size={20} /> },
-=======
->>>>>>> 3b42cf460f530e5d6abe945295f443b0016e3994
   ];
 
   return (
