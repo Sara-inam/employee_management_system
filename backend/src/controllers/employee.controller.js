@@ -96,7 +96,7 @@ export const createEmployee = async (req, res) => {
     //flush function call
     flushEmployeeCache();
 
-    res.status(201).json({ message: "Employee created successfully" });
+    res.status(200).json({ message: "Employee created successfully" });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -118,7 +118,7 @@ export const updateEmployee = async (req, res) => {
     if (!employee) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(400).json({ message: "Employee not found" });
     }
 
     if (name) employee.name = name;
@@ -159,7 +159,7 @@ export const permanentlyDeleteEmployee = async (req, res) => {
     if (!deletedEmployee) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(400).json({ message: "Employee not found" });
     }
 
     await session.commitTransaction();
@@ -271,6 +271,16 @@ export const RestoreEmployee = async (req, res) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    logger.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+export const getAllEmployees = async (req, res) => {
+  try {
+    // sirf active employees aur required fields
+    const employees = await User.find({ role: "employee", isDeleted: false }).select("_id name");
+    res.status(200).json({ employees });
+  } catch (error) {
     logger.error(error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
