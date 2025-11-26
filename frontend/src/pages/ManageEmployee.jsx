@@ -132,10 +132,10 @@ const ManageEmployee = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateEmail(formData.email)) {
-      setErrorMsg("Email must be a valid Gmail address (example@gmail.com)");
-      return;
-    }
+    // if (!validateEmail(formData.email)) {
+    //   setErrorMsg("Email must be a valid Gmail address (example@gmail.com)");
+    //   return;
+    // }
     if (!editId && formData.password.trim().length < 6) {
       setErrorMsg("Password must be at least 6 characters.");
       return;
@@ -149,14 +149,14 @@ const ManageEmployee = () => {
   };
 
   // Pagination numbers (scrollable)
-  const getPageNumbers = () => {
-    const total = pagination.totalPages;
-    const current = pagination.currentPage;
-    let start = Math.max(current - 2, 1);
-    let end = Math.min(start + 4, total);
-    start = Math.max(end - 4, 1);
-    return [...Array(end - start + 1)].map((_, i) => start + i);
-  };
+  // const getPageNumbers = () => {
+  //   const total = pagination.totalPages;
+  //   const current = pagination.currentPage;
+  //   let start = Math.max(current - 2, 1);
+  //   let end = Math.min(start + 4, total);
+  //   start = Math.max(end - 4, 1);
+  //   return [...Array(end - start + 1)].map((_, i) => start + i);
+  // };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
