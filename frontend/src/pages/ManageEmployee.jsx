@@ -49,7 +49,7 @@ const ManageEmployee = () => {
     queryKey: ["employees", pagination.currentPage],
     queryFn: async () => {
       const res = await axiosAuth.get(
-        `${EMP_API}/get-employee?page=${pagination.currentPage}&limit=${pagination.perPage}`
+        `${EMP_API}/get-employee?page=${pagination.currentPage}&limit=${pagination.perPage}&sort=-createdAt`
       );
 
       setPagination({
@@ -66,13 +66,15 @@ const ManageEmployee = () => {
 
   // Create / Update / Delete Mutations
   const createMutation = useMutation({
-    mutationFn: (body) => axiosAuth.post(`${EMP_API}/create-employee`, body),
-    onSuccess: () => {
-      toast.success("Employee created");
-      queryClient.invalidateQueries(["employees"]);
-    },
-    onError: (err) => toast.error(err.response?.data?.message || "Error"),
-  });
+  mutationFn: (body) => axiosAuth.post(`${EMP_API}/create-employee`, body),
+  onSuccess: () => {
+    
+    setPagination(p => ({ ...p, currentPage: 1 })); // <- Ye important
+    queryClient.invalidateQueries(["employees"]);
+    toast.success("Employee created");
+  },
+  onError: (err) => toast.error(err.response?.data?.message || "Error"),
+});
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => axiosAuth.put(`${EMP_API}/update-employee/${id}`, body),

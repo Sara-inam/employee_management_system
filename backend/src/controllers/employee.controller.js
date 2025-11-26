@@ -36,6 +36,7 @@ export const getEmployee = async (req, res) => {
       select: "name head",
       populate: { path: "head", select: "name" }
     })
+    .sort({ createdAt: -1 }) 
     .skip(skip)
     .limit(limit)
     .lean(); // <-- fix here
