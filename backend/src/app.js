@@ -1,5 +1,5 @@
 import express from "express";
-import salaryRouter from './routes/salary.route.js';
+
 import authRouter from './routes/auth.route.js';
 import employeeRouter from './routes/employee.route.js';
 import departmentRouter from "./routes/department.route.js";
@@ -10,7 +10,7 @@ app.use(express.json());
 
 app.use("/auth", authRouter);      
 app.use("/employee", employeeRouter); 
-app.use("/salary", salaryRouter);
+
 app.use("/department", departmentRouter); 
       
 

@@ -9,7 +9,7 @@ const AdminSidebar = () => {
   const menus = [
     { name: "Admin Dashboard", path: "/admin-dashboard", Icon: <Home size={20} /> },
     { name: "Manage Employee", path: "/manage-employee", Icon: <Users size={20} /> },
-    { name: "Manage Salary", path: "/manage-salary", Icon: <DollarSign size={20} /> },
+    // { name: "Manage Salary", path: "/manage-salary", Icon: <DollarSign size={20} /> },
      { name: "Manage Department", path: "/manage-department", Icon: <DollarSign size={20} /> },
   ];
 

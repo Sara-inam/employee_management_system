@@ -8,7 +8,7 @@ import { ToastContainer } from "react-toastify";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "react-toastify/dist/ReactToastify.css";
 import ManageEmployee from './pages/ManageEmployee.jsx';
-import ManageSalary from './pages/ManageSalary.jsx';
+// import ManageSalary from './pages/ManageSalary.jsx';
 import AdminLayout from './components/AdminLayout.jsx';
 import ManageDepartment from './pages/ManageDepartment.jsx';
 
@@ -30,7 +30,7 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/manage-employee" element={<ManageEmployee />} />
-          <Route path="/manage-salary" element={<ManageSalary />} />
+          {/* <Route path="/manage-salary" element={<ManageSalary />} /> */}
           <Route path="/manage-department" element={<ManageDepartment />} />
         </Route>
       </Routes>

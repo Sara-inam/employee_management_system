@@ -6,6 +6,6 @@ const departmentRouter = express.Router();
 departmentRouter.post("/create-department", verifyToken, authorizeRoles("admin"), createDepartment);
 departmentRouter.put("/update-department/:id", verifyToken, authorizeRoles("admin"), updateDepartment);
 departmentRouter.get('/get-department', verifyToken, authorizeRoles("admin"), getDepartment);
-departmentRouter.delete('/delete-department', verifyToken, authorizeRoles("admin"), deleteDepartment);
+departmentRouter.delete('/delete-department/:id', verifyToken, authorizeRoles("admin"), deleteDepartment);
 
 export default departmentRouter;

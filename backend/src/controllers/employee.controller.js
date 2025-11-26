@@ -28,13 +28,30 @@ export const getEmployee = async (req, res) => {
       return res.status(200).json(cachedData);
     }
 
-    if (loggedInUserRole === "admin") {
-      users = await User.find(query).select("-password").skip(skip).limit(limit);
-    } else if (loggedInUserRole === "employee") {
-      users = await User.find(query).select("-password -createdAt -updatedAt").skip(skip).limit(limit);
-    } else {
-      return res.status(403).json({ message: "Unauthorized access" });
-    }
+   if (loggedInUserRole === "admin") {
+  users = await User.find(query)
+    .select("-password")
+    .populate({
+      path: "departments",
+      select: "name head",
+      populate: { path: "head", select: "name" }
+    })
+    .skip(skip)
+    .limit(limit)
+    .lean(); // <-- fix here
+} else if (loggedInUserRole === "employee") {
+  users = await User.find(query)
+    .select("-password -createdAt -updatedAt")
+    .populate({
+      path: "departments",
+      select: "name head",
+      populate: { path: "head", select: "name" }
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean(); // <-- fix here
+}
 
      const total = await User.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
@@ -70,7 +87,7 @@ export const createEmployee = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { name, email, password, role, profileImage } = req.body;
+    const { name, email, password, role, profileImage, departments, salary } = req.body;
 
     const existing = await User.findOne({ email }).session(session);
     if (existing) {
@@ -87,6 +104,8 @@ export const createEmployee = async (req, res) => {
       password: hashPassword,
       role,
       profileImage: profileImage || null,
+       departments: departments || [], 
+       salary
     });
 
     await newEmployee.save({ session });
@@ -112,7 +131,7 @@ export const updateEmployee = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { name, email, password, profileImage } = req.body;
+    const { name, email, password, profileImage, departments, salary } = req.body;
 
     const employee = await User.findById(id).session(session);
     if (!employee) {
@@ -125,6 +144,8 @@ export const updateEmployee = async (req, res) => {
     if (email) employee.email = email;
     if (password) employee.password = await bcrypt.hash(password, 10);
     if (profileImage) employee.profileImage = profileImage;
+    if (departments) employee.departments = departments;
+    if (salary) employee.salary = salary;
 
     await employee.save({ session });
     await session.commitTransaction();
@@ -278,7 +299,12 @@ export const RestoreEmployee = async (req, res) => {
 export const getAllEmployees = async (req, res) => {
   try {
     // sirf active employees aur required fields
-    const employees = await User.find({ role: "employee", isDeleted: false }).select("_id name");
+    const employees = await User.find({ role: "employee", isDeleted: false }).select("_id email").populate({
+    path: "departments",
+    select: "name head",
+    populate: { path: "head", select: "email" }
+  }).sort({ createdAt: -1 })   // name aur head fields fetch honge
+  .exec();
     res.status(200).json({ employees });
   } catch (error) {
     logger.error(error.message);
