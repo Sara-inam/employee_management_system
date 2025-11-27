@@ -10,8 +10,6 @@ const axiosAuth = axios.create({
   headers: { Authorization: `Bearer ${token}` },
 });
 
-const validateEmail = (email) => /^[^\s@]+@gmail\.com$/.test(email);
-
 const ManageEmployee = () => {
   const queryClient = useQueryClient();
 
@@ -28,6 +26,7 @@ const ManageEmployee = () => {
     role: "employee",
     departments: [],
     salary: "",
+    profileImage: null, // For file upload
   });
 
   const [editId, setEditId] = useState(null);
@@ -64,20 +63,25 @@ const ManageEmployee = () => {
   });
   const employees = data || [];
 
-  // Create / Update / Delete Mutations
+  // Mutations
   const createMutation = useMutation({
-  mutationFn: (body) => axiosAuth.post(`${EMP_API}/create-employee`, body),
-  onSuccess: () => {
-    
-    setPagination(p => ({ ...p, currentPage: 1 })); // <- Ye important
-    queryClient.invalidateQueries(["employees"]);
-    toast.success("Employee created");
-  },
-  onError: (err) => toast.error(err.response?.data?.message || "Error"),
-});
+    mutationFn: (body) =>
+      axiosAuth.post(`${EMP_API}/create-employee`, body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
+    onSuccess: () => {
+      setPagination(p => ({ ...p, currentPage: 1 }));
+      queryClient.invalidateQueries(["employees"]);
+      toast.success("Employee created");
+    },
+    onError: (err) => toast.error(err.response?.data?.message || "Error"),
+  });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }) => axiosAuth.put(`${EMP_API}/update-employee/${id}`, body),
+    mutationFn: ({ id, body }) =>
+      axiosAuth.put(`${EMP_API}/update-employee/${id}`, body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     onSuccess: () => {
       toast.success("Employee updated");
       queryClient.invalidateQueries(["employees"]);
@@ -110,11 +114,12 @@ const ManageEmployee = () => {
         password: "",
         role: emp.role,
         departments: emp.departments ? emp.departments.map(d => String(d._id)) : [],
-        salary: emp.salary || "", // <- ye important
+        salary: emp.salary || "",
+        profileImage: emp.profileImage || null, // Load existing image for preview
       });
     } else {
       setEditId(null);
-      setFormData({ name: "", email: "", password: "", role: "employee", departments: [], salary: "" });
+      setFormData({ name: "", email: "", password: "", role: "employee", departments: [], salary: "", profileImage: null });
     }
     setErrorMsg("");
     setIsModalOpen(true);
@@ -130,33 +135,28 @@ const ManageEmployee = () => {
     setErrorMsg("");
   };
 
+  const handleFileChange = (e) => {
+    setFormData({ ...formData, profileImage: e.target.files[0] });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // if (!validateEmail(formData.email)) {
-    //   setErrorMsg("Email must be a valid Gmail address (example@gmail.com)");
-    //   return;
-    // }
-    if (!editId && formData.password.trim().length < 6) {
-      setErrorMsg("Password must be at least 6 characters.");
-      return;
-    }
+
+    const fd = new FormData();
+    fd.append("name", formData.name);
+    fd.append("email", formData.email);
+    fd.append("salary", formData.salary);
+    fd.append("role", formData.role);
+    formData.departments.forEach(dep => fd.append("departments[]", dep));
+    if (!editId) fd.append("password", formData.password);
+    if (formData.profileImage) fd.append("profileImage", formData.profileImage);
 
     editId
-      ? updateMutation.mutate({ id: editId, body: formData })
-      : createMutation.mutate(formData);
+      ? updateMutation.mutate({ id: editId, body: fd })
+      : createMutation.mutate(fd);
 
     closeModal();
   };
-
-  // Pagination numbers (scrollable)
-  // const getPageNumbers = () => {
-  //   const total = pagination.totalPages;
-  //   const current = pagination.currentPage;
-  //   let start = Math.max(current - 2, 1);
-  //   let end = Math.min(start + 4, total);
-  //   start = Math.max(end - 4, 1);
-  //   return [...Array(end - start + 1)].map((_, i) => start + i);
-  // };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -172,104 +172,68 @@ const ManageEmployee = () => {
       {!isLoading && employees.length === 0 && <p className="text-center text-gray-500">No employees found</p>}
 
       {!isLoading && employees.length > 0 && (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white shadow rounded">
-              <thead className="bg-gray-900 text-white">
-                <tr>
-                  <th className="p-3">#</th>
-                  <th className="p-3">Name</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Salary</th>
-                  <th className="p-3">Departments</th>
-                  <th className="p-3">Head Department</th>
-
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-center">Actions</th>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white shadow rounded">
+            <thead className="bg-gray-900 text-white">
+              <tr>
+                <th className="p-3">#</th>
+                <th className="p-3">Profile</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Role</th>
+                <th className="p-3">Salary</th>
+                <th className="p-3">Departments</th>
+                <th className="p-3">Head Department</th>
+                <th className="p-3">Status</th>
+                <th className="p-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp, index) => (
+                <tr key={emp._id} className={`border-b ${emp.isDeleted ? "bg-gray-100 italic" : "hover:bg-gray-50"}`}>
+                  <td className="p-3">{(pagination.currentPage - 1) * pagination.perPage + index + 1}</td>
+                  <td className="p-3">
+                    {emp.profileImage ? (
+                      <img
+                        src={emp.profileImage.startsWith("http") ? emp.profileImage : `http://localhost:5000/${emp.profileImage}`}
+                        alt={emp.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="p-3">{emp.name}</td>
+                  <td className="p-3">{emp.email}</td>
+                  <td className="p-3 capitalize">{emp.role}</td>
+                  <td className="p-3">{emp.salary || "-"}</td>
+                  <td className="p-3">
+                    {emp.departments && emp.departments.length > 0 ? emp.departments.map(d => d.name).join(", ") : "-"}
+                  </td>
+                  <td className="p-3">
+                    {emp.departments && emp.departments.length > 0
+                      ? emp.departments.filter(d => d.head && d.head._id === emp._id).map(d => d.name).join(", ") || "-"
+                      : "-"}
+                  </td>
+                  <td className="p-3">{emp.isDeleted ? "Deleted" : "Active"}</td>
+                  <td className="p-3 flex gap-2 justify-center">
+                    {!emp.isDeleted ? (
+                      <>
+                        <button onClick={() => openModal(emp)} className="text-blue-600">Edit</button>
+                        <button onClick={() => softDeleteMutation.mutate(emp._id)} className="text-red-600">Delete</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => restoreMutation.mutate(emp._id)} className="text-green-600">Restore</button>
+                        <button onClick={() => permanentDeleteMutation.mutate(emp._id)} className="text-red-800">Permanent Delete</button>
+                      </>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp, index) => (
-                  <tr key={emp._id} className={`border-b ${emp.isDeleted ? "bg-gray-100 italic" : "hover:bg-gray-50"}`}>
-                    <td className="p-3">{(pagination.currentPage - 1) * pagination.perPage + index + 1}</td>
-                    <td className="p-3">{emp.name}</td>
-                    <td className="p-3">{emp.email}</td>
-                    <td className="p-3 capitalize">{emp.role}</td>
-                    <td className="p-3">{emp.salary || "-"}</td>
-
-                    <td className="p-3">
-                      {emp.departments && emp.departments.length > 0
-                        ? emp.departments.map(d => d.name).join(", ")
-                        : "-"}
-                    </td>
-                    <td className="p-3">
-                      {emp.departments && emp.departments.length > 0
-                        ? emp.departments
-                          .filter(d => d.head && d.head._id === emp._id) // sirf wo department jiska wo head hai
-                          .map(d => d.name)
-                          .join(", ") || "-"  // agar head department nahi hai to "-"
-                        : "-"}
-                    </td>
-
-                    <td className="p-3">{emp.isDeleted ? "Deleted" : "Active"}</td>
-                    <td className="p-3 flex gap-2 justify-center">
-                      {!emp.isDeleted ? (
-                        <>
-                          <button onClick={() => openModal(emp)} className="text-blue-600">Edit</button>
-                          <button onClick={() => softDeleteMutation.mutate(emp._id)} className="text-red-600">Delete</button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => restoreMutation.mutate(emp._id)} className="text-green-600">Restore</button>
-                          <button onClick={() => permanentDeleteMutation.mutate(emp._id)} className="text-red-800">Permanent Delete</button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex justify-center mt-5">
-            <div className="flex items-center gap-2">
-              <button
-                disabled={pagination.currentPage === 1}
-                onClick={() => setPagination(p => ({ ...p, currentPage: Math.max(p.currentPage - 1, 1) }))}
-                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
-
-              <div className="overflow-x-auto max-w-[500px]">
-                <div className="flex gap-2 whitespace-nowrap">
-                  {[...Array(pagination.totalPages)].map((_, index) => {
-                    const pageNum = index + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPagination(p => ({ ...p, currentPage: pageNum }))}
-                        className={`px-3 py-1 rounded ${pagination.currentPage === pageNum ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <button
-                disabled={pagination.currentPage === pagination.totalPages}
-                onClick={() => setPagination(p => ({ ...p, currentPage: Math.min(p.currentPage + 1, p.totalPages) }))}
-                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* Modal */}
@@ -280,6 +244,23 @@ const ManageEmployee = () => {
             {errorMsg && <p className="text-red-600 text-sm text-center pb-4">{errorMsg}</p>}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <div>
+                <label className="block mb-1 font-medium">Profile Image</label>
+                <input type="file" accept="image/*" onChange={handleFileChange} />
+                {formData.profileImage && (
+                  <img
+                   src={typeof formData.profileImage === "string"
+  ? (formData.profileImage.startsWith("http")
+      ? formData.profileImage
+      : `http://localhost:5000/${formData.profileImage}`
+    )
+  : URL.createObjectURL(formData.profileImage)
+}
+                    alt="Preview"
+                    className="w-20 h-20 mt-2 rounded-full object-cover"
+                  />
+                )}
+              </div>
               <input name="name" value={formData.name} onChange={handleChange} placeholder="Employee Name" className="border p-2 rounded" required />
               <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Employee Email" className="border p-2 rounded" required />
               {!editId && <input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Password" className="border p-2 rounded" required />}
@@ -300,8 +281,8 @@ const ManageEmployee = () => {
                           setFormData(prev => ({
                             ...prev,
                             departments: prev.departments.includes(value)
-                              ? prev.departments.filter(d => d !== value) // uncheck
-                              : [...prev.departments, value],           // check
+                              ? prev.departments.filter(d => d !== value)
+                              : [...prev.departments, value],
                           }));
                         }}
                       />

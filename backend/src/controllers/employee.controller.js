@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import logger from "../config/logger.js";
 import mongoose from "mongoose";
 import NodeCache from "node-cache";
+import fs from "fs";
 
 //create in memory cache for 60 seconds
 const cache = new NodeCache({stdTTL: 60});
@@ -88,7 +89,8 @@ export const createEmployee = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { name, email, password, role, profileImage, departments, salary } = req.body;
+    const { name, email, password, role,  departments, salary } = req.body;
+    const profileImage = req.file ? "uploads/" + req.file.filename : null;
 
     const existing = await User.findOne({ email }).session(session);
     if (existing) {
@@ -104,7 +106,7 @@ export const createEmployee = async (req, res) => {
       email,
       password: hashPassword,
       role,
-      profileImage: profileImage || null,
+      profileImage,
        departments: departments || [], 
        salary
     });
@@ -132,8 +134,10 @@ export const updateEmployee = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { name, email, password, profileImage, departments, salary } = req.body;
+    const { name, email, password, departments, salary } = req.body;
+    const profileImage = req.file ? "uploads/" + req.file.filename : null;
 
+    // Fetch employee from DB
     const employee = await User.findById(id).session(session);
     if (!employee) {
       await session.abortTransaction();
@@ -141,10 +145,18 @@ export const updateEmployee = async (req, res) => {
       return res.status(400).json({ message: "Employee not found" });
     }
 
+    // Image handling: delete old image if new image uploaded
+    if (profileImage) {
+      if (employee.profileImage && fs.existsSync(employee.profileImage)) {
+        fs.unlinkSync(employee.profileImage); // deletes old image
+      }
+      employee.profileImage = profileImage; // save new image path
+    }
+
+    // Update other fields
     if (name) employee.name = name;
     if (email) employee.email = email;
     if (password) employee.password = await bcrypt.hash(password, 10);
-    if (profileImage) employee.profileImage = profileImage;
     if (departments) employee.departments = departments;
     if (salary) employee.salary = salary;
 

@@ -2,15 +2,16 @@ import express, { Router } from 'express';
 import {createEmployee, getEmployee, updateEmployee, permanentlyDeleteEmployee, softDeleteEmployee,getAllEmployees, RestoreEmployee, getTotalEmployees } from '../controllers/employee.controller.js';
 import {verifyToken, authorizeRoles} from '../middlewares/auth.middleware.js';
 import User from '../models/user.model.js';
+import upload from "../middlewares/upload.middleware.js";
 const employeeRouter = express.Router();
 
-employeeRouter.post("/create-employee", verifyToken, authorizeRoles("admin"), createEmployee);
+employeeRouter.post("/create-employee", verifyToken, authorizeRoles("admin"),upload.single("profileImage"), createEmployee);
 employeeRouter.get("/get-employee", verifyToken, authorizeRoles("admin", "employee"), getEmployee);
-employeeRouter.put("/update-employee/:id", verifyToken, authorizeRoles("admin"), updateEmployee);
+employeeRouter.put("/update-employee/:id", verifyToken, authorizeRoles("admin"),upload.single("profileImage"), updateEmployee);
 employeeRouter.patch("/soft-delete/:id", verifyToken, authorizeRoles("admin"), softDeleteEmployee);
 employeeRouter.patch("/restore/:id", verifyToken, authorizeRoles("admin"), RestoreEmployee);
 employeeRouter.delete("/permanent-delete/:id", verifyToken, authorizeRoles("admin"), permanentlyDeleteEmployee);
-employeeRouter.get("/employeecount", verifyToken, authorizeRoles("admin"), getTotalEmployees );
+employeeRouter.get("/employeecount", verifyToken, authorizeRoles("admin", "employee"), getTotalEmployees );
 employeeRouter.get("/get-all", verifyToken, authorizeRoles("admin"), getAllEmployees);
 employeeRouter.get('/search', async (req, res) => {
   try {
