@@ -13,7 +13,7 @@ app.use("/auth", authRouter);
 app.use("/employee", employeeRouter);
 app.use("/department", departmentRouter);
 app.use("/emp-profile", profileRouter);
-app.use("/uploads", express.static(path.resolve("uploads")));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use((req, res) => {
   res.status(404).json({ message: "API endpoint not found" });

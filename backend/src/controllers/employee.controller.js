@@ -4,6 +4,7 @@ import logger from "../config/logger.js";
 import mongoose from "mongoose";
 import NodeCache from "node-cache";
 import fs from "fs";
+import path from "path";
 
 //create in memory cache for 60 seconds
 const cache = new NodeCache({stdTTL: 60});
@@ -52,7 +53,7 @@ export const getEmployee = async (req, res) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .lean(); // <-- fix here
+    .lean(); 
 }
 
      const total = await User.countDocuments(query);
@@ -90,7 +91,7 @@ export const createEmployee = async (req, res) => {
 
   try {
     const { name, email, password, role,  departments, salary } = req.body;
-    const profileImage = req.file ? "uploads/" + req.file.filename : null;
+    const profileImage = req.file ? "/uploads/" + req.file.filename : null;
 
     const existing = await User.findOne({ email }).session(session);
     if (existing) {
@@ -135,25 +136,28 @@ export const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, password, departments, salary } = req.body;
-    const profileImage = req.file ? "uploads/" + req.file.filename : null;
+    const newImagePath = req.file ? "/uploads/" + req.file.filename : null;
 
-    // Fetch employee from DB
     const employee = await User.findById(id).session(session);
     if (!employee) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: "Employee not found" });
+      return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Image handling: delete old image if new image uploaded
-    if (profileImage) {
-      if (employee.profileImage && fs.existsSync(employee.profileImage)) {
-        fs.unlinkSync(employee.profileImage); // deletes old image
+    //IMAGE DELETE FIX 
+    if (newImagePath) {
+      if (employee.profileImage) {
+        const oldImageFullPath = path.join(process.cwd(), employee.profileImage);
+
+        if (fs.existsSync(oldImageFullPath)) {
+          fs.unlinkSync(oldImageFullPath);
+        }
       }
-      employee.profileImage = profileImage; // save new image path
+      employee.profileImage = newImagePath;
     }
 
-    // Update other fields
+    //  Update other fields 
     if (name) employee.name = name;
     if (email) employee.email = email;
     if (password) employee.password = await bcrypt.hash(password, 10);
@@ -161,13 +165,13 @@ export const updateEmployee = async (req, res) => {
     if (salary) employee.salary = salary;
 
     await employee.save({ session });
+
     await session.commitTransaction();
     session.endSession();
 
-    //invalidate cache
     flushEmployeeCache();
-
     res.status(200).json({ message: "Employee updated successfully" });
+
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -316,7 +320,7 @@ export const getAllEmployees = async (req, res) => {
     path: "departments",
     select: "name head",
     populate: { path: "head", select: "email" }
-  }).sort({ createdAt: -1 })   // name aur head fields fetch honge
+  }).sort({ createdAt: -1 })  
   .exec();
     res.status(200).json({ employees });
   } catch (error) {

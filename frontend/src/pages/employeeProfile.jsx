@@ -3,7 +3,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import "react-toastify/dist/ReactToastify.css";
-import  { PRO_API, BASE_API }  from "../config";
+import  { PRO_API, BASE_API }  from "../config.js";
 // export const BASE_API = import.meta.env.VITE_API_BASE_URL;
 // export const PRO_API = `${BASE_API}/emp-profile`;
 
@@ -36,29 +36,27 @@ const EmployeeProfile = () => {
 
   // UPDATE PROFILE
   const updateMutation = useMutation({
-    mutationFn: async (body) => {
-      const fd = new FormData();
-      if (body.name !== originalData.name) fd.append("name", body.name);
-      if (previewImage) fd.append("profileImage", previewImage);
-
-      return axiosAuth.put(`${PRO_API}/update`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    },
-    onSuccess: (res) => {
-      toast.success("Profile updated successfully!");
-      setEditMode(false);
-      queryClient.invalidateQueries(["profile"]);
-      setPreviewImage(null);
-      // update original data after successful update
-      setOriginalData({
-        name: res.data.data.name,
-        profileImage: res.data.data.profileImage,
-      });
-    },
-    onError: (err) =>
-      toast.error(err.response?.data?.message || "Error updating profile"),
-  });
+  mutationFn: async (body) => {
+    const fd = new FormData();
+    if (body.name !== originalData.name) fd.append("name", body.name);
+    if (previewImage) fd.append("profileImage", previewImage); // <-- use previewImage
+    return axiosAuth.put(`${PRO_API}/update`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  onSuccess: (res) => {
+    toast.success("Profile updated successfully!");
+    setEditMode(false);
+    queryClient.invalidateQueries(["profile"]);
+    setPreviewImage(null);
+    setOriginalData({
+      name: res.data.data.name,
+      profileImage: res.data.data.profileImage,
+    });
+  },
+  onError: (err) =>
+    toast.error(err.response?.data?.message || "Error updating profile"),
+});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -85,12 +83,12 @@ const EmployeeProfile = () => {
       <div className="flex justify-center mb-4">
         <img
           src={
-            previewImage
-              ? URL.createObjectURL(previewImage)
-              : profile?.profileImage
-              ? `${BASE_API}${profile.profileImage}`
-              : "https://via.placeholder.com/150/cccccc/ffffff?text=No+Image"
-          }
+  previewImage
+    ? URL.createObjectURL(previewImage)
+    : profile?.profileImage?.startsWith("http")
+    ? profile.profileImage
+    : `${BASE_API}${profile.profileImage}`
+}
           alt="Profile"
           className="w-32 h-32 rounded-full object-cover shadow"
         />

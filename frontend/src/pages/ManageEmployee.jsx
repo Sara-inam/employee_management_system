@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DEPT_API, EMP_API } from '../config.js';
+import { DEPT_API, EMP_API, BASE_API } from '../config.js';
 
 const token = localStorage.getItem("token");
 
@@ -27,6 +27,7 @@ const ManageEmployee = () => {
     departments: [],
     salary: "",
     profileImage: null, // For file upload
+    existingImage: null,  
   });
 
   const [editId, setEditId] = useState(null);
@@ -115,7 +116,8 @@ const ManageEmployee = () => {
         role: emp.role,
         departments: emp.departments ? emp.departments.map(d => String(d._id)) : [],
         salary: emp.salary || "",
-        profileImage: emp.profileImage || null, // Load existing image for preview
+        profileImage: null,
+existingImage: emp.profileImage || null, 
       });
     } else {
       setEditId(null);
@@ -147,9 +149,11 @@ const ManageEmployee = () => {
     fd.append("email", formData.email);
     fd.append("salary", formData.salary);
     fd.append("role", formData.role);
-    formData.departments.forEach(dep => fd.append("departments[]", dep));
+    formData.departments.forEach(dep => fd.append("departments", dep));
     if (!editId) fd.append("password", formData.password);
-    if (formData.profileImage) fd.append("profileImage", formData.profileImage);
+    if (formData.profileImage instanceof File) {
+  fd.append("profileImage", formData.profileImage);
+}
 
     editId
       ? updateMutation.mutate({ id: editId, body: fd })
@@ -195,8 +199,10 @@ const ManageEmployee = () => {
                   <td className="p-3">
                     {emp.profileImage ? (
                       <img
-                        src={emp.profileImage.startsWith("http") ? emp.profileImage : `http://localhost:5000/${emp.profileImage}`}
-                        alt={emp.name}
+                        src={emp.profileImage?.startsWith("http")
+  ? emp.profileImage
+  : `${BASE_API}${emp.profileImage}`}
+                        // alt={emp.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
@@ -247,19 +253,16 @@ const ManageEmployee = () => {
               <div>
                 <label className="block mb-1 font-medium">Profile Image</label>
                 <input type="file" accept="image/*" onChange={handleFileChange} />
-                {formData.profileImage && (
-                  <img
-                   src={typeof formData.profileImage === "string"
-  ? (formData.profileImage.startsWith("http")
-      ? formData.profileImage
-      : `http://localhost:5000/${formData.profileImage}`
-    )
-  : URL.createObjectURL(formData.profileImage)
-}
-                    alt="Preview"
-                    className="w-20 h-20 mt-2 rounded-full object-cover"
-                  />
-                )}
+               {(formData.profileImage instanceof File || formData.existingImage) && (
+  <img
+    src={
+      formData.profileImage
+        ? URL.createObjectURL(formData.profileImage)
+        : `${BASE_API}${formData.existingImage}`
+    }
+    className="w-20 h-20 mt-2 rounded-full object-cover"
+  />
+)}
               </div>
               <input name="name" value={formData.name} onChange={handleChange} placeholder="Employee Name" className="border p-2 rounded" required />
               <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Employee Email" className="border p-2 rounded" required />

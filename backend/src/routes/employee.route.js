@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import {createEmployee, getEmployee, updateEmployee, permanentlyDeleteEmployee, softDeleteEmployee,getAllEmployees, RestoreEmployee, getTotalEmployees } from '../controllers/employee.controller.js';
 import {verifyToken, authorizeRoles} from '../middlewares/auth.middleware.js';
 import User from '../models/user.model.js';
-import upload from "../middlewares/upload.middleware.js";
+import {upload} from "../middlewares/upload.middleware.js";
 const employeeRouter = express.Router();
 
 employeeRouter.post("/create-employee", verifyToken, authorizeRoles("admin"),upload.single("profileImage"), createEmployee);
